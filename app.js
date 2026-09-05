@@ -1,6 +1,6 @@
 // ── CONFIG ──────────────────────────────────────────────────────
 const API_URL     = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL_VISION = 'qwen/qwen3.8-27b';      // Фото — тільки Qwen підтримує масив
+const MODEL_VISION = 'qwen/qwen3.6-27b';      // Єдина модель на Groq що підтримує image_url
 const MODEL_TEXT   = 'openai/gpt-oss-120b';   // Текст — строго рядок
 
 const TOKENS_PER_PHOTO_EST = 1200;
