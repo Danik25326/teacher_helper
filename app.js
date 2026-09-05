@@ -1,6 +1,6 @@
 // ── CONFIG ──────────────────────────────────────────────────────
 const API_URL     = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL_VISION = 'qwen/qwen3.6-27b';      // Фото — тільки Qwen підтримує масив
+const MODEL_VISION = 'qwen/qwen3.8-27b';      // Фото — тільки Qwen підтримує масив
 const MODEL_TEXT   = 'openai/gpt-oss-120b';   // Текст — строго рядок
 
 const TOKENS_PER_PHOTO_EST = 1200;
@@ -208,9 +208,9 @@ ${workLabel !== 'Домашнє завдання' ? 'Контрольна/сам
 {"grade":<число 1-10>,"errors":"<помилки або Помилок не знайдено>","advice":"<поради учню>","summary":"<загальний коментар>"}`
     });
 
-    // Сторінки підручника якщо є
+    // Сторінки підручника якщо є (max 3)
     if (state.textbookPages.length > 0) {
-      const maxPages = Math.min(state.textbookPages.length, 5);
+      const maxPages = Math.min(state.textbookPages.length, 3);
       userBlocks.push({ type: 'text', text: `Контекст — підручник (${maxPages} стор.):` });
       state.textbookPages.slice(0, maxPages).forEach(pg => {
         userBlocks.push({ type: 'image_url', image_url: { url: `data:${pg.mime};base64,${pg.b64}` } });
@@ -225,17 +225,19 @@ ${workLabel !== 'Домашнє завдання' ? 'Контрольна/сам
     });
 
     const body = {
-      model     : MODEL_VISION,   // Qwen — єдина модель що приймає масив з картинками
-      max_tokens: 1024,
+      model      : MODEL_VISION,
+      max_tokens : 1024,
       temperature: 0.2,
-      messages  : [
-        { role: 'system', content: systemPrompt },  // рядок
-        { role: 'user',   content: userBlocks },     // масив з текстом + image_url
+      messages   : [
+        // Qwen vision через Groq — system role може не підтримуватись, інструкція йде в user
+        { role: 'user', content: userBlocks },
       ],
     };
 
-    // Логуємо для дебагу
-    console.log('[teacher] sending', sheetImages.length, 'sheet(s),', state.textbookPages.length, 'textbook pages');
+    // Детальний лог що відправляємо
+    console.log('[teacher] model:', MODEL_VISION);
+    console.log('[teacher] blocks:', userBlocks.map(b => b.type));
+    console.log('[teacher] body size:', JSON.stringify(body).length, 'bytes');
 
     const response = await fetch(API_URL, {
       method : 'POST',
@@ -245,8 +247,8 @@ ${workLabel !== 'Домашнє завдання' ? 'Контрольна/сам
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      console.error('[teacher] API error:', errData);
-      throw new Error(errData?.error?.message || `HTTP ${response.status}`);
+      console.error('[teacher] API error full:', JSON.stringify(errData));
+      throw new Error(errData?.error?.message || errData?.error?.type || `HTTP ${response.status}`);
     }
 
     const data       = await response.json();
