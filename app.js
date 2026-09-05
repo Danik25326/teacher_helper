@@ -173,12 +173,41 @@ function handleSheet(n, file) {
     preview.src = URL.createObjectURL(file);
     preview.classList.remove('hidden');
   }
-  // Підсвічуємо кнопку цього слота
   const btns = document.querySelectorAll('.sheet-btn');
   if (btns[n - 1]) {
     btns[n - 1].classList.add('has-file');
-    btns[n - 1].textContent = `✅ ${file.name.slice(0, 20)}`;
+    btns[n - 1].textContent = `✅ ${file.name.slice(0, 18)}`;
   }
+  updateSheetsSummary();
+}
+
+function updateSheetsSummary() {
+  const sheets  = getSheetFiles();
+  const summary = $('sheets-summary');
+  const row     = $('sheets-preview-row');
+  const count   = $('sheets-count');
+
+  if (!sheets.length) {
+    if (summary) summary.classList.add('hidden');
+    return;
+  }
+
+  if (summary) summary.classList.remove('hidden');
+  if (count)   count.textContent = sheets.length;
+  if (!row)    return;
+
+  row.innerHTML = '';
+  sheets.forEach((f, i) => {
+    const wrap  = document.createElement('div');
+    wrap.className = 'summary-thumb';
+    const img   = document.createElement('img');
+    img.src     = URL.createObjectURL(f);
+    const label = document.createElement('span');
+    label.textContent = `Аркуш ${i + 1}`;
+    wrap.appendChild(img);
+    wrap.appendChild(label);
+    row.appendChild(wrap);
+  });
 }
 
 // ── ПЕРЕВІРКА ────────────────────────────────────────────────────
@@ -342,6 +371,11 @@ function resetForNext() {
     btn.classList.remove('has-file');
     btn.textContent = '📷 Додати фото';
   });
+  // Скидаємо загальне превʼю
+  const summary = $('sheets-summary');
+  const row     = $('sheets-preview-row');
+  if (summary) summary.classList.add('hidden');
+  if (row)     row.innerHTML = '';
   $('student-name').value = '';
   $('result-body').classList.add('hidden');
   $('next-btn').classList.add('hidden');
