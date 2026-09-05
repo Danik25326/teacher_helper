@@ -1,6 +1,7 @@
 // ── CONFIG ──────────────────────────────────────────────────────
-const API_URL  = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL    = 'openai/gpt-oss-120b';
+const API_URL     = 'https://api.groq.com/openai/v1/chat/completions';
+const MODEL_VISION = 'qwen/qwen3.6-27b';      // Фото — тільки Qwen підтримує масив
+const MODEL_TEXT   = 'openai/gpt-oss-120b';   // Текст — строго рядок
 
 const TOKENS_PER_PHOTO_EST = 1200;
 const DAILY_LIMIT          = 200000;
@@ -224,9 +225,13 @@ ${workLabel !== 'Домашнє завдання' ? 'Контрольна/сам
     });
 
     const body = {
-      model     : MODEL,
-      max_tokens: 800,
-      messages  : [{ role: 'user', content: userBlocks }],
+      model     : MODEL_VISION,   // Qwen — єдина модель що приймає масив з картинками
+      max_tokens: 1024,
+      temperature: 0.2,
+      messages  : [
+        { role: 'system', content: systemPrompt },  // рядок
+        { role: 'user',   content: userBlocks },     // масив з текстом + image_url
+      ],
     };
 
     // Логуємо для дебагу
