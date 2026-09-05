@@ -35,7 +35,6 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
-// Три окремих слоти для аркушів учня
 [1, 2, 3].forEach(n => {
   $(`sheet-${n}`).addEventListener('change', e => handleSheet(n, e.target.files[0]));
 });
@@ -73,7 +72,6 @@ async function loadTextbook() {
 async function loadPDF(file) {
   showStatus('textbook-status', '⏳ Читаю PDF…', 'loading');
 
-  // Безпечно отримуємо елементи прогрес-бару
   const wrap = $('pdf-progress-wrap');
   const bar  = $('pdf-progress-bar');
   const txt  = $('pdf-progress-text');
@@ -84,7 +82,7 @@ async function loadPDF(file) {
 
   try {
     if (typeof pdfjsLib === 'undefined') {
-      throw new Error('pdf.js не завантажився. Перевірте підключення до інтернету та оновіть сторінку.');
+      throw new Error('pdf.js не завантажився. Перевірте інтернет і оновіть сторінку.');
     }
 
     pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -102,10 +100,8 @@ async function loadPDF(file) {
     for (let i = 1; i <= totalPages; i++) {
       const page = await pdfDoc.getPage(i);
       const viewport = page.getViewport({ scale: 1.5 });
-
       canvas.width  = viewport.width;
       canvas.height = viewport.height;
-
       await page.render({ canvasContext: ctx, viewport }).promise;
 
       const b64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
@@ -114,21 +110,17 @@ async function loadPDF(file) {
       const pct = Math.round((i / totalPages) * 100);
       if (bar) bar.style.width = pct + '%';
       if (txt) txt.textContent = `Сторінка ${i} з ${totalPages}…`;
-
       await new Promise(r => setTimeout(r, 0));
     }
 
     state.textbookLoaded = true;
     if (wrap) wrap.classList.add('hidden');
     renderTextbookPreviews();
-    showStatus('textbook-status',
-      `✅ PDF завантажено: ${totalPages} сторінок конвертовано.`,
-      'success'
-    );
+    showStatus('textbook-status', `✅ PDF завантажено: ${totalPages} сторінок.`, 'success');
 
   } catch (err) {
     if (wrap) wrap.classList.add('hidden');
-    showStatus('textbook-status', `❌ Помилка читання PDF: ${err.message}`, 'error');
+    showStatus('textbook-status', `❌ Помилка: ${err.message}`, 'error');
   }
 }
 
@@ -153,16 +145,17 @@ function renderTextbookPreviews() {
 // ── АРКУШІ УЧНЯ ──────────────────────────────────────────────────
 function handleSheet(n, file) {
   if (!file) return;
-
   const preview = $(`preview-${n}`);
   if (preview) {
     preview.src = URL.createObjectURL(file);
     preview.classList.remove('hidden');
   }
-
-  // Підсвічуємо зону завантаження
-  const zone = document.querySelector(`label[for="sheet-${n}"]`);
-  if (zone) zone.classList.add('has-file');
+  // Підсвічуємо кнопку цього слота
+  const btns = document.querySelectorAll('.sheet-btn');
+  if (btns[n - 1]) {
+    btns[n - 1].classList.add('has-file');
+    btns[n - 1].textContent = `✅ ${file.name.slice(0, 20)}`;
+  }
 }
 
 // ── ПЕРЕВІРКА ────────────────────────────────────────────────────
@@ -182,11 +175,10 @@ async function checkWork() {
     const apiKey = getApiKey();
     if (!apiKey) { alert('Додайте API ключ у файл config.js'); return; }
 
-    // Конвертуємо аркуші
     const sheetImages = [];
     for (const f of sheets) {
       const b64 = await toBase64(f);
-      if (!b64) throw new Error(`Не вдалося прочитати файл: ${f.name}`);
+      if (!b64) throw new Error(`Не вдалося прочитати: ${f.name}`);
       sheetImages.push({ b64, mime: f.type || 'image/jpeg' });
     }
 
@@ -198,67 +190,63 @@ async function checkWork() {
 
     const studentName = $('student-name').value.trim() || 'Учень';
 
-    // Системний промпт — рядок (як у боті)
-    const systemPrompt = `Ти — шкільний вчитель математики (алгебра та геометрія, НУШ).
-Перевіряєш учнівські роботи і оцінюєш за 10-бальною системою НУШ.
-Критерії: 10 — бездоганно; 7-9 — незначні помилки; 4-6 — суттєві помилки; 1-3 — більшість завдань невірні.
-Для контрольної та самостійної роботи вимоги до точності підвищені.
-Відповідай ТІЛЬКИ JSON без жодного тексту поза ним.`;
-
-    // User content — масив (текст + зображення)
+    // ── Будуємо content як ОДИН масив (без system role — модель не підтримує) ──
     const userBlocks = [];
+
+    // Інструкція першим текстовим блоком
+    userBlocks.push({
+      type: 'text',
+      text:
+`Ти — шкільний вчитель математики (алгебра і геометрія, НУШ).
+Тип роботи: ${workLabel}. Учень: ${studentName}.
+Оціни роботу за 10-бальною системою НУШ:
+10 — бездоганно; 7-9 — незначні помилки; 4-6 — суттєві помилки; 1-3 — більшість завдань невірні.
+${workLabel !== 'Домашнє завдання' ? 'Контрольна/самостійна — вимоги підвищені.' : ''}
+
+Поверни ТІЛЬКИ JSON без будь-якого тексту поза ним:
+{"grade":<число 1-10>,"errors":"<помилки або Помилок не знайдено>","advice":"<поради учню>","summary":"<загальний коментар>"}`
+    });
 
     // Сторінки підручника якщо є
     if (state.textbookPages.length > 0) {
-      const maxPages = Math.min(state.textbookPages.length, 6);
-      userBlocks.push({
-        type: 'text',
-        text: `Контекст: підручник (${maxPages} стор. з ${state.textbookPages.length}):`
-      });
+      const maxPages = Math.min(state.textbookPages.length, 5);
+      userBlocks.push({ type: 'text', text: `Контекст — підручник (${maxPages} стор.):` });
       state.textbookPages.slice(0, maxPages).forEach(pg => {
         userBlocks.push({ type: 'image_url', image_url: { url: `data:${pg.mime};base64,${pg.b64}` } });
       });
     }
 
-    // Інструкція + аркуші
-    userBlocks.push({
-      type: 'text',
-      text: `Тип роботи: ${workLabel}. Учень: ${studentName}. Аркушів: ${sheetImages.length}.
-
-Перевір роботу і поверни JSON:
-{"grade":<1-10>,"errors":"<помилки або Помилок не знайдено>","advice":"<поради учню>","summary":"<загальний коментар>"}`
-    });
-
+    // Аркуші роботи учня
+    userBlocks.push({ type: 'text', text: `Робота учня (${sheetImages.length} аркуш${sheetImages.length > 1 ? 'і' : ''}):` });
     sheetImages.forEach((img, i) => {
       userBlocks.push({ type: 'text', text: `Аркуш ${i + 1}:` });
       userBlocks.push({ type: 'image_url', image_url: { url: `data:${img.mime};base64,${img.b64}` } });
     });
 
+    const body = {
+      model     : MODEL,
+      max_tokens: 800,
+      messages  : [{ role: 'user', content: userBlocks }],
+    };
+
+    // Логуємо для дебагу
+    console.log('[teacher] sending', sheetImages.length, 'sheet(s),', state.textbookPages.length, 'textbook pages');
+
     const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type' : 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model     : MODEL,
-        max_tokens: 800,
-        messages  : [
-          { role: 'system', content: systemPrompt },  // рядок — як у боті
-          { role: 'user',   content: userBlocks },     // масив — як у боті
-        ],
-      }),
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body   : JSON.stringify(body),
     });
 
     if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `HTTP ${response.status}`);
+      const errData = await response.json().catch(() => ({}));
+      console.error('[teacher] API error:', errData);
+      throw new Error(errData?.error?.message || `HTTP ${response.status}`);
     }
 
-    const data     = await response.json();
-    const rawText  = data.choices?.[0]?.message?.content || '';
-    const usage    = data.usage || {};
-    const tokensUsed = usage.total_tokens || 0;
+    const data       = await response.json();
+    const rawText    = data.choices?.[0]?.message?.content || '';
+    const tokensUsed = data.usage?.total_tokens || 0;
 
     state.lastTokens   = tokensUsed;
     state.totalTokens += tokensUsed;
@@ -266,13 +254,13 @@ async function checkWork() {
 
     let result;
     try {
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-      result = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
+      const m = rawText.match(/\{[\s\S]*\}/);
+      result = JSON.parse(m ? m[0] : rawText);
     } catch {
       result = { grade: '?', errors: rawText, advice: '', summary: '' };
     }
 
-    showResult(result, studentName);
+    showResult(result);
     updateStats(studentName, result.grade);
 
   } catch (err) {
@@ -300,19 +288,16 @@ function showResult(result) {
 }
 
 function updateStats(studentName, grade) {
-  const tokensLeft = DAILY_LIMIT - state.totalTokens;
-  const photosLeft = Math.max(0, Math.floor(tokensLeft / TOKENS_PER_PHOTO_EST));
-
+  const photosLeft = Math.max(0, Math.floor((DAILY_LIMIT - state.totalTokens) / TOKENS_PER_PHOTO_EST));
   $('tokens-used').textContent   = state.lastTokens.toLocaleString();
   $('tokens-total').textContent  = state.totalTokens.toLocaleString();
   $('photos-left').textContent   = `~${photosLeft} фото`;
   $('works-checked').textContent = state.worksChecked;
 
-  const log   = $('grades-log');
   const entry = document.createElement('div');
   entry.className = 'grade-entry';
   entry.innerHTML = `<span class="g-name">${studentName || 'Учень ' + state.worksChecked}</span><span class="g-score">${grade}/10</span>`;
-  log.prepend(entry);
+  $('grades-log').prepend(entry);
 }
 
 // ── СКИДАННЯ ─────────────────────────────────────────────────────
@@ -322,8 +307,11 @@ function resetForNext() {
     const preview = $(`preview-${n}`);
     if (input)   input.value = '';
     if (preview) { preview.src = ''; preview.classList.add('hidden'); }
-    const zone = document.querySelector(`label[for="sheet-${n}"]`);
-    if (zone) zone.classList.remove('has-file');
+  });
+  // Скидаємо кнопки
+  document.querySelectorAll('.sheet-btn').forEach(btn => {
+    btn.classList.remove('has-file');
+    btn.textContent = '📷 Додати фото';
   });
   $('student-name').value = '';
   $('result-body').classList.add('hidden');
@@ -346,10 +334,9 @@ function toBase64(file) {
   return new Promise((res, rej) => {
     const reader = new FileReader();
     reader.onload  = () => {
-      const result = reader.result;
-      const comma  = result.indexOf(',');
+      const comma = reader.result.indexOf(',');
       if (comma === -1) { rej(new Error('Не вдалося прочитати файл')); return; }
-      res(result.slice(comma + 1));
+      res(reader.result.slice(comma + 1));
     };
     reader.onerror = () => rej(new Error('Помилка читання файлу'));
     reader.readAsDataURL(file);
