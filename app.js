@@ -226,7 +226,7 @@ ${workLabel !== 'Домашнє завдання' ? 'Контрольна/сам
 
     const body = {
       model      : MODEL_VISION,
-      max_tokens : 1024,
+      max_tokens : 800,
       temperature: 0.2,
       messages   : [
         // Qwen vision через Groq — system role може не підтримуватись, інструкція йде в user
