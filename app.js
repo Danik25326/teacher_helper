@@ -306,17 +306,24 @@ async function checkWork() {
     const data       = await response.json();
     const rawText    = data.choices?.[0]?.message?.content || '';
     const tokensUsed = data.usage?.total_tokens || 0;
+    console.log('[teacher] raw response:', rawText.slice(0, 500));
 
     state.lastTokens   = tokensUsed;
     state.totalTokens += tokensUsed;
     state.worksChecked++;
 
-    // Вирізаємо <think>...</think> блок (qwen думає вголос)
-    // Також обробляємо випадок коли <think> не закрився (токени скінчились посередині)
-    let cleanText = rawText
-      .replace(/<think>[\s\S]*?<\/think>\n*/gi, '')  // закритий think
-      .replace(/<think>[\s\S]*/gi, '')                // незакритий think
-      .trim();
+    // Вирізаємо <think>...</think> блок
+    // Якщо think не закрився — беремо тільки те що після </think>
+    // Якщо </think> немає взагалі — шукаємо JSON напряму в тексті
+    let cleanText = rawText;
+    if (rawText.includes('</think>')) {
+      cleanText = rawText.replace(/<think>[\s\S]*?<\/think>\n*/gi, '').trim();
+    } else if (rawText.includes('<think>')) {
+      // think не закрився — шукаємо JSON після останнього рядку думання
+      const jsonStart = rawText.lastIndexOf('{');
+      cleanText = jsonStart !== -1 ? rawText.slice(jsonStart) : '';
+    }
+    console.log('[teacher] clean text:', cleanText.slice(0, 200));
 
     let result;
     try {
