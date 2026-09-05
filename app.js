@@ -279,8 +279,7 @@ async function checkWork() {
 
     const body = {
       model      : MODEL_VISION,
-      max_tokens : 999,
-      temperature: 0,
+      temperature: 0.2,
       messages   : [
         { role: 'user', content: userBlocks },
       ],
