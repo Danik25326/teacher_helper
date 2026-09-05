@@ -22,10 +22,15 @@ const $ = id => document.getElementById(id);
 $('load-textbook-btn').addEventListener('click', loadTextbook);
 
 $('textbook-upload').addEventListener('change', e => {
-  const f = e.target.files[0];
-  if (!f) return;
+  const files = e.target.files;
+  if (!files.length) return;
   const nameEl = $('textbook-filename');
-  if (nameEl) nameEl.textContent = f.name;
+  if (!nameEl) return;
+  if (files.length === 1) {
+    nameEl.textContent = files[0].name;
+  } else {
+    nameEl.textContent = `${files.length} фото вибрано`;
+  }
 });
 
 document.querySelectorAll('.tab').forEach(tab => {
@@ -47,27 +52,44 @@ $('next-btn').addEventListener('click', resetForNext);
 async function loadTextbook() {
   const files = $('textbook-upload').files;
   if (!files.length) {
-    showStatus('textbook-status', 'Спочатку виберіть файл підручника.', 'error');
+    showStatus('textbook-status', 'Спочатку виберіть файл(и) підручника.', 'error');
     return;
   }
 
-  const file = files[0];
   state.textbookPages = [];
   state.textbookLoaded = false;
 
-  if (file.type === 'application/pdf') {
-    await loadPDF(file);
-  } else if (file.type.startsWith('image/')) {
-    showStatus('textbook-status', '⏳ Завантаження зображення…', 'loading');
-    const b64 = await toBase64(file);
-    if (!b64) { showStatus('textbook-status', '❌ Не вдалося прочитати файл.', 'error'); return; }
-    state.textbookPages.push({ b64, mime: file.type });
-    state.textbookLoaded = true;
-    renderTextbookPreviews();
-    showStatus('textbook-status', '✅ Завантажено 1 сторінку.', 'success');
-  } else {
-    showStatus('textbook-status', '⚠️ Підтримуються PDF та зображення (JPG/PNG).', 'error');
+  const firstFile = files[0];
+
+  // PDF — тільки один файл, конвертуємо сторінки
+  if (firstFile.type === 'application/pdf') {
+    if (files.length > 1) {
+      showStatus('textbook-status', '⚠️ Для PDF оберіть лише один файл.', 'error');
+      return;
+    }
+    await loadPDF(firstFile);
+    return;
   }
+
+  // Фото — можна декілька
+  showStatus('textbook-status', `⏳ Завантаження ${files.length} фото…`, 'loading');
+  let loaded = 0;
+  for (const file of files) {
+    if (!file.type.startsWith('image/')) continue;
+    const b64 = await toBase64(file);
+    if (!b64) continue;
+    state.textbookPages.push({ b64, mime: file.type });
+    loaded++;
+  }
+
+  if (!loaded) {
+    showStatus('textbook-status', '⚠️ Не вдалося прочитати жодного файлу.', 'error');
+    return;
+  }
+
+  state.textbookLoaded = true;
+  renderTextbookPreviews();
+  showStatus('textbook-status', `✅ Завантажено ${loaded} стор. підручника.`, 'success');
 }
 
 async function loadPDF(file) {
@@ -226,7 +248,7 @@ ${workLabel !== 'Домашнє завдання' ? 'Контрольна/сам
 
     const body = {
       model      : MODEL_VISION,
-      max_tokens : 800,
+      max_tokens : 1024,
       temperature: 0.2,
       messages   : [
         // Qwen vision через Groq — system role може не підтримуватись, інструкція йде в user
