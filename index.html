@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Перевірка домашніх завдань</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>📚 Перевірка домашніх завдань</h1>
+    <p class="subtitle">Алгебра та Геометрія — НУШ, 10-бальна система</p>
+  </header>
+
+  <main>
+    <!-- ПІДРУЧНИК -->
+    <section class="card" id="textbook-section">
+      <h2>1. Завантажте підручник</h2>
+      <p class="hint">ШІ проаналізує зміст і буде перевіряти завдання відповідно до програми.</p>
+      <div class="upload-row">
+        <label class="upload-btn" for="textbook-upload">
+          📖 Вибрати підручник (PDF або фото)
+          <input type="file" id="textbook-upload" accept="image/*,.pdf" hidden />
+        </label>
+        <span id="textbook-filename" class="filename-label">файл не вибрано</span>
+        <button id="load-textbook-btn" class="btn-primary">Завантажити в ШІ</button>
+      </div>
+
+      <!-- Прогрес конвертації PDF -->
+      <div id="pdf-progress-wrap" class="pdf-progress hidden">
+        <div class="pdf-progress-bar-bg">
+          <div id="pdf-progress-bar" class="pdf-progress-bar-fill"></div>
+        </div>
+        <span id="pdf-progress-text" class="pdf-progress-text">Зачекайте…</span>
+      </div>
+
+      <div id="textbook-status" class="status-bar hidden"></div>
+      <div id="textbook-preview" class="preview-grid"></div>
+    </section>
+
+    <!-- ВКЛАДКИ ТИПУ РОБОТИ -->
+    <section class="card" id="work-section">
+      <h2>2. Тип роботи</h2>
+      <div class="tabs">
+        <button class="tab active" data-type="homework">📝 Домашнє завдання</button>
+        <button class="tab" data-type="classwork">✏️ Самостійна робота</button>
+        <button class="tab" data-type="test">📋 Контрольна робота</button>
+      </div>
+
+      <!-- АРКУШІ -->
+      <div id="sheets-area">
+        <h3>Завантажте роботу учня</h3>
+        <p class="hint">Один учень може прислати 1–3 фотографії. Завантажте всі — це одна робота.</p>
+
+        <div class="sheets-grid">
+          <div class="sheet-slot" data-sheet="1">
+            <label>Аркуш 1</label>
+            <label class="upload-zone" for="sheet-1">
+              <span>+ Фото аркуша 1</span>
+              <input type="file" id="sheet-1" accept="image/*" hidden />
+            </label>
+            <img class="sheet-preview hidden" id="preview-1" />
+          </div>
+          <div class="sheet-slot" data-sheet="2">
+            <label>Аркуш 2</label>
+            <label class="upload-zone" for="sheet-2">
+              <span>+ Фото аркуша 2</span>
+              <input type="file" id="sheet-2" accept="image/*" hidden />
+            </label>
+            <img class="sheet-preview hidden" id="preview-2" />
+          </div>
+          <div class="sheet-slot" data-sheet="3">
+            <label>Аркуш 3</label>
+            <label class="upload-zone" for="sheet-3">
+              <span>+ Фото аркуша 3</span>
+              <input type="file" id="sheet-3" accept="image/*" hidden />
+            </label>
+            <img class="sheet-preview hidden" id="preview-3" />
+          </div>
+        </div>
+
+        <div class="student-meta">
+          <input type="text" id="student-name" placeholder="Ім'я учня (необов'язково)" />
+        </div>
+
+        <button id="check-btn" class="btn-primary big">🔍 Перевірити роботу</button>
+      </div>
+    </section>
+
+    <!-- РЕЗУЛЬТАТИ + СТАТИСТИКА -->
+    <div id="results-area" class="results-layout hidden">
+
+      <!-- РЕЗУЛЬТАТ ПЕРЕВІРКИ -->
+      <section class="card result-card" id="result-section">
+        <h2>3. Результат перевірки</h2>
+        <div id="result-content">
+          <div id="loading-spinner" class="spinner hidden">⏳ ШІ перевіряє роботу...</div>
+          <div id="result-body" class="hidden">
+            <div class="grade-row">
+              <div class="grade-badge" id="grade-badge">—</div>
+              <div class="grade-label">/ 10 балів (НУШ)</div>
+            </div>
+            <div class="result-block" id="errors-block">
+              <h4>❌ Помилки</h4>
+              <p id="errors-text"></p>
+            </div>
+            <div class="result-block" id="advice-block">
+              <h4>💡 Поради учню</h4>
+              <p id="advice-text"></p>
+            </div>
+            <div class="result-block" id="summary-block">
+              <h4>📝 Загальний коментар</h4>
+              <p id="summary-text"></p>
+            </div>
+          </div>
+        </div>
+        <button id="next-btn" class="btn-secondary hidden">➕ Наступна робота</button>
+      </section>
+
+      <!-- БІЧНА ПАНЕЛЬ СТАТИСТИКИ -->
+      <aside class="stats-panel" id="stats-panel">
+        <h3>📊 Статистика</h3>
+        <div class="stat-item">
+          <span class="stat-label">Токени (ця робота)</span>
+          <span class="stat-value" id="tokens-used">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Токени (всього)</span>
+          <span class="stat-value" id="tokens-total">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Ліміт (хв)</span>
+          <span class="stat-value">8 000 / хв</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Ліміт (день)</span>
+          <span class="stat-value">200 000 / день</span>
+        </div>
+        <hr />
+        <div class="stat-item highlight">
+          <span class="stat-label">≈ Ще фото можна</span>
+          <span class="stat-value" id="photos-left">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Перевірено робіт</span>
+          <span class="stat-value" id="works-checked">0</span>
+        </div>
+        <hr />
+        <h4>Журнал оцінок</h4>
+        <div id="grades-log" class="grades-log"></div>
+      </aside>
+
+    </div>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,356 @@
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f0f4f8;
+  --surface: #ffffff;
+  --border: #d1dce8;
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --secondary: #64748b;
+  --success: #16a34a;
+  --error: #dc2626;
+  --warning: #d97706;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,.08);
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 48px;
+}
+
+/* ── Header ── */
+header {
+  background: var(--primary);
+  color: #fff;
+  padding: 20px 32px;
+  text-align: center;
+}
+header h1 { font-size: 1.6rem; font-weight: 700; }
+header .subtitle { margin-top: 4px; opacity: .8; font-size: .95rem; }
+
+/* ── Cards ── */
+main { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.card h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; }
+.card h3 { font-size: 1rem; font-weight: 600; margin: 16px 0 8px; }
+
+.hint {
+  color: var(--text-muted);
+  font-size: .875rem;
+  margin-bottom: 12px;
+}
+
+/* ── Upload ── */
+.upload-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1.5px dashed var(--border);
+  border-radius: 8px;
+  padding: 10px 18px;
+  cursor: pointer;
+  font-size: .9rem;
+  transition: border-color .2s;
+}
+.upload-btn:hover { border-color: var(--primary); }
+
+/* ── Buttons ── */
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s;
+}
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary.big { padding: 14px 32px; font-size: 1rem; margin-top: 20px; width: 100%; }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: all .2s;
+}
+.btn-secondary:hover { background: var(--primary); color: #fff; }
+
+/* ── Status Bar ── */
+.status-bar {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: .875rem;
+  font-weight: 500;
+}
+.status-bar.success { background: #dcfce7; color: var(--success); border: 1px solid #86efac; }
+.status-bar.error   { background: #fee2e2; color: var(--error); border: 1px solid #fca5a5; }
+.status-bar.loading { background: #eff6ff; color: var(--primary); border: 1px solid #93c5fd; }
+
+/* ── Preview Grid ── */
+.preview-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.preview-grid img {
+  width: 100px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.tab {
+  padding: 8px 18px;
+  border: 1.5px solid var(--border);
+  border-radius: 30px;
+  background: transparent;
+  cursor: pointer;
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: all .2s;
+}
+.tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* ── Sheets Grid ── */
+.sheets-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 600px) { .sheets-grid { grid-template-columns: 1fr; } }
+
+.sheet-slot label:first-child {
+  display: block;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.upload-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 110px;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: .85rem;
+  color: var(--text-muted);
+  transition: all .2s;
+  background: var(--bg);
+}
+.upload-zone:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
+.upload-zone.has-file { border-style: solid; border-color: var(--success); }
+
+.sheet-preview {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+}
+
+/* ── Student Meta ── */
+.student-meta input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: .9rem;
+  outline: none;
+  transition: border-color .2s;
+}
+.student-meta input:focus { border-color: var(--primary); }
+
+/* ── Results Layout ── */
+.results-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 768px) { .results-layout { grid-template-columns: 1fr; } }
+
+/* ── Result Card ── */
+.grade-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.grade-badge {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.grade-label { font-size: 1.1rem; font-weight: 600; color: var(--text-muted); }
+
+.result-block {
+  margin-bottom: 16px;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: 8px;
+  border-left: 4px solid var(--border);
+}
+.result-block h4 { font-size: .875rem; font-weight: 700; margin-bottom: 6px; }
+.result-block p { font-size: .9rem; line-height: 1.6; white-space: pre-wrap; }
+
+#errors-block   { border-left-color: var(--error); }
+#advice-block   { border-left-color: var(--warning); }
+#summary-block  { border-left-color: var(--success); }
+
+/* ── Stats Panel ── */
+.stats-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 16px;
+}
+.stats-panel h3 { font-size: 1rem; font-weight: 700; margin-bottom: 14px; }
+.stats-panel h4 { font-size: .875rem; font-weight: 600; margin-bottom: 8px; color: var(--text-muted); }
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bg);
+  font-size: .85rem;
+}
+.stat-label { color: var(--text-muted); }
+.stat-value { font-weight: 700; color: var(--text); }
+.stat-item.highlight .stat-value { color: var(--primary); font-size: 1.1rem; }
+
+.stats-panel hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+/* ── Grades Log ── */
+.grades-log { display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; }
+.grade-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: .8rem;
+}
+.grade-entry .g-name { color: var(--text-muted); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.grade-entry .g-score {
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #fff;
+}
+
+/* ── Spinner ── */
+.spinner { text-align: center; padding: 32px; font-size: 1rem; color: var(--text-muted); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+/* ── PDF Progress ── */
+.pdf-progress {
+  margin-top: 12px;
+}
+.pdf-progress-bar-bg {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.pdf-progress-bar-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 4px;
+  width: 0%;
+  transition: width .2s ease;
+}
+.pdf-progress-text {
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+
+/* ── Filename label ── */
+.filename-label {
+  font-size: .8rem;
+  color: var(--text-muted);
+  font-style: italic;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Preview more ── */
+.preview-more {
+  width: 100px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  font-size: .8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ── Utilities ── */
+.hidden { display: none !important; }
