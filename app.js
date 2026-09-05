@@ -249,38 +249,40 @@ async function checkWork() {
     userBlocks.push({
       type: 'text',
       text:
-`Ти — шкільний вчитель математики (алгебра і геометрія, НУШ).
-Тип роботи: ${workLabel}. Учень: ${studentName}.
-Оціни роботу за 10-бальною системою НУШ:
-10 — бездоганно; 7-9 — незначні помилки; 4-6 — суттєві помилки; 1-3 — більшість завдань невірні.
-${workLabel !== 'Домашнє завдання' ? 'Контрольна/самостійна — вимоги підвищені.' : ''}
-
-Поверни ТІЛЬКИ JSON без будь-якого тексту поза ним:
-{"grade":<число 1-10>,"errors":"<помилки або Помилок не знайдено>","advice":"<поради учню>","summary":"<загальний коментар>"}`
+`Ти вчитель математики НУШ. Відповідай ТІЛЬКИ українською. Тип роботи: ${workLabel}. Учень: ${studentName}.
+Оціни за 10-бальною системою: 10=бездоганно, 7-9=незначні помилки, 4-6=суттєві помилки, 1-3=більшість невірні.
+Без роздумів. Одразу поверни ТІЛЬКИ цей JSON:
+{"grade":<1-10>,"errors":"<помилки або Помилок не знайдено>","advice":"<порада>","summary":"<коментар>"}`
     });
 
-    // Сторінки підручника якщо є (max 3)
-    if (state.textbookPages.length > 0) {
-      const maxPages = Math.min(state.textbookPages.length, 3);
+    // ── Ліміт: qwen3.6-27b підтримує max 3 зображення на запит ──
+    const MAX_IMAGES    = 3;
+    const sheetsCount   = sheetImages.length;
+    // Скільки можна виділити під підручник
+    const textbookSlots = Math.max(0, MAX_IMAGES - sheetsCount);
+
+    // Сторінки підручника якщо є
+    if (state.textbookPages.length > 0 && textbookSlots > 0) {
+      const maxPages = Math.min(state.textbookPages.length, textbookSlots);
       userBlocks.push({ type: 'text', text: `Контекст — підручник (${maxPages} стор.):` });
       state.textbookPages.slice(0, maxPages).forEach(pg => {
         userBlocks.push({ type: 'image_url', image_url: { url: `data:${pg.mime};base64,${pg.b64}` } });
       });
     }
 
-    // Аркуші роботи учня
-    userBlocks.push({ type: 'text', text: `Робота учня (${sheetImages.length} аркуш${sheetImages.length > 1 ? 'і' : ''}):` });
-    sheetImages.forEach((img, i) => {
+    // Аркуші роботи учня (беремо не більше MAX_IMAGES)
+    const sheetsToSend = sheetImages.slice(0, MAX_IMAGES);
+    userBlocks.push({ type: 'text', text: `Робота учня (${sheetsToSend.length} аркуш${sheetsToSend.length > 1 ? 'і' : ''}):` });
+    sheetsToSend.forEach((img, i) => {
       userBlocks.push({ type: 'text', text: `Аркуш ${i + 1}:` });
       userBlocks.push({ type: 'image_url', image_url: { url: `data:${img.mime};base64,${img.b64}` } });
     });
 
     const body = {
       model      : MODEL_VISION,
-      max_tokens : 1024,
-      temperature: 0.2,
+      max_tokens : 999,
+      temperature: 0,
       messages   : [
-        // Qwen vision через Groq — system role може не підтримуватись, інструкція йде в user
         { role: 'user', content: userBlocks },
       ],
     };
@@ -310,12 +312,15 @@ ${workLabel !== 'Домашнє завдання' ? 'Контрольна/сам
     state.totalTokens += tokensUsed;
     state.worksChecked++;
 
+    // Вирізаємо <think>...</think> блок (qwen думає вголос)
+    const cleanText = rawText.replace(/<think>[\s\S]*?<\/think>\n*/gi, '').trim();
+
     let result;
     try {
-      const m = rawText.match(/\{[\s\S]*\}/);
-      result = JSON.parse(m ? m[0] : rawText);
+      const m = cleanText.match(/\{[\s\S]*\}/);
+      result = JSON.parse(m ? m[0] : cleanText);
     } catch {
-      result = { grade: '?', errors: rawText, advice: '', summary: '' };
+      result = { grade: '?', errors: cleanText || rawText, advice: '', summary: '' };
     }
 
     showResult(result);
