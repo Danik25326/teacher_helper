@@ -53,28 +53,22 @@
         <p class="hint">Один учень може прислати 1–3 фотографії. Завантажте всі — це одна робота.</p>
 
         <div class="sheets-grid">
-          <div class="sheet-slot" data-sheet="1">
-            <label>Аркуш 1</label>
-            <label class="upload-zone" for="sheet-1">
-              <span>+ Фото аркуша 1</span>
-              <input type="file" id="sheet-1" accept="image/*" hidden />
-            </label>
+          <div class="sheet-slot">
+            <div class="sheet-label">Аркуш 1</div>
+            <input type="file" id="sheet-1" accept="image/*" style="display:none" />
+            <button class="sheet-btn" onclick="document.getElementById('sheet-1').click()">📷 Додати фото</button>
             <img class="sheet-preview hidden" id="preview-1" />
           </div>
-          <div class="sheet-slot" data-sheet="2">
-            <label>Аркуш 2</label>
-            <label class="upload-zone" for="sheet-2">
-              <span>+ Фото аркуша 2</span>
-              <input type="file" id="sheet-2" accept="image/*" hidden />
-            </label>
+          <div class="sheet-slot">
+            <div class="sheet-label">Аркуш 2</div>
+            <input type="file" id="sheet-2" accept="image/*" style="display:none" />
+            <button class="sheet-btn" onclick="document.getElementById('sheet-2').click()">📷 Додати фото</button>
             <img class="sheet-preview hidden" id="preview-2" />
           </div>
-          <div class="sheet-slot" data-sheet="3">
-            <label>Аркуш 3</label>
-            <label class="upload-zone" for="sheet-3">
-              <span>+ Фото аркуша 3</span>
-              <input type="file" id="sheet-3" accept="image/*" hidden />
-            </label>
+          <div class="sheet-slot">
+            <div class="sheet-label">Аркуш 3</div>
+            <input type="file" id="sheet-3" accept="image/*" style="display:none" />
+            <button class="sheet-btn" onclick="document.getElementById('sheet-3').click()">📷 Додати фото</button>
             <img class="sheet-preview hidden" id="preview-3" />
           </div>
         </div>
