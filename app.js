@@ -247,8 +247,7 @@ async function checkWork() {
 `Ти — шкільний вчитель математики (алгебра і геометрія, НУШ). Відповідай ВИКЛЮЧНО українською мовою.
 Тип роботи: ${workLabel}. Учень: ${studentName}.
 Оціни роботу за 10-бальною системою НУШ: 10=бездоганно, 7-9=незначні помилки, 4-6=суттєві, 1-3=більшість невірні.
-Поверни ТІЛЬКИ JSON без жодного тексту поза ним:
-{"grade":<1-10>,"errors":"<помилки або Помилок не знайдено>","advice":"<поради>","summary":"<коментар>"}`;
+Після думання поверни ТІЛЬКИ валідний JSON з полями: grade (число 1-10), errors (рядок), advice (рядок), summary (рядок).`;
 
     // User blocks — МАСИВ з текстом + зображеннями (точно як у боті)
     const userBlocks = [];
@@ -309,23 +308,20 @@ async function checkWork() {
     state.totalTokens += tokensUsed;
     state.worksChecked++;
 
-    // Вирізаємо <think>...</think> блок
-    // Якщо think не закрився — беремо тільки те що після </think>
-    // Якщо </think> немає взагалі — шукаємо JSON напряму в тексті
-    let cleanText = rawText;
-    if (rawText.includes('</think>')) {
-      cleanText = rawText.replace(/<think>[\s\S]*?<\/think>\n*/gi, '').trim();
-    } else if (rawText.includes('<think>')) {
-      // think не закрився — шукаємо JSON після останнього рядку думання
-      const jsonStart = rawText.lastIndexOf('{');
-      cleanText = jsonStart !== -1 ? rawText.slice(jsonStart) : '';
-    }
+    // Вирізаємо <think> блок точно як у боті
+    const cleanText = rawText.replace(/<think>[\s\S]*?<\/think>\n*/gi, '').trim();
     console.log('[teacher] clean text:', cleanText.slice(0, 200));
 
     let result;
     try {
-      const m = cleanText.match(/\{[\s\S]*\}/);
-      result = JSON.parse(m ? m[0] : cleanText);
+      // Беремо ОСТАННІЙ JSON блок — модель може повторити шаблон у думанні
+      const matches = cleanText.match(/\{[\s\S]*?\}/g);
+      const lastJson = matches ? matches[matches.length - 1] : null;
+      result = JSON.parse(lastJson || cleanText);
+      // Перевіряємо що grade — реальне число, а не шаблон
+      if (!Number.isInteger(result.grade) || result.grade < 1 || result.grade > 10) {
+        throw new Error('grade not valid');
+      }
     } catch {
       result = { grade: '?', errors: cleanText || rawText, advice: '', summary: '' };
     }
