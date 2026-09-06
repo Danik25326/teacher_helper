@@ -242,22 +242,20 @@ async function checkWork() {
 
     const studentName = $('student-name').value.trim() || 'Учень';
 
-    // ── Будуємо content як ОДИН масив (без system role — модель не підтримує) ──
-    const userBlocks = [];
+    // System prompt — РЯДОК (точно як у боті)
+    const systemPrompt =
+`Ти — шкільний вчитель математики (алгебра і геометрія, НУШ). Відповідай ВИКЛЮЧНО українською мовою.
+Тип роботи: ${workLabel}. Учень: ${studentName}.
+Оціни роботу за 10-бальною системою НУШ: 10=бездоганно, 7-9=незначні помилки, 4-6=суттєві, 1-3=більшість невірні.
+Поверни ТІЛЬКИ JSON без жодного тексту поза ним:
+{"grade":<1-10>,"errors":"<помилки або Помилок не знайдено>","advice":"<поради>","summary":"<коментар>"}`;
 
-    userBlocks.push({
-      type: 'text',
-      text: `/no_think
-Вчитель НУШ. Українська. ${workLabel}. Учень: ${studentName}.
-Шкала: 10=відмінно,7-9=добре,4-6=задовільно,1-3=незадовільно.
-Відповідь — ТІЛЬКИ JSON:
-{"grade":<1-10>,"errors":"...","advice":"...","summary":"..."}`
-    });
+    // User blocks — МАСИВ з текстом + зображеннями (точно як у боті)
+    const userBlocks = [];
 
     // ── Ліміт: qwen3.6-27b підтримує max 3 зображення на запит ──
     const MAX_IMAGES    = 3;
     const sheetsCount   = sheetImages.length;
-    // Скільки можна виділити під підручник
     const textbookSlots = Math.max(0, MAX_IMAGES - sheetsCount);
 
     // Сторінки підручника якщо є
@@ -269,26 +267,26 @@ async function checkWork() {
       });
     }
 
-    // Аркуші роботи учня (беремо не більше MAX_IMAGES)
+    // Аркуші роботи учня
     const sheetsToSend = sheetImages.slice(0, MAX_IMAGES);
-    userBlocks.push({ type: 'text', text: `Робота учня (${sheetsToSend.length} аркуш${sheetsToSend.length > 1 ? 'і' : ''}):` });
+    userBlocks.push({ type: 'text', text: `Перевір роботу учня (${sheetsToSend.length} аркуш${sheetsToSend.length > 1 ? 'і' : ''}):` });
     sheetsToSend.forEach((img, i) => {
       userBlocks.push({ type: 'text', text: `Аркуш ${i + 1}:` });
       userBlocks.push({ type: 'image_url', image_url: { url: `data:${img.mime};base64,${img.b64}` } });
     });
 
+    // Запит — точно як у боті: system рядок + user масив, без max_tokens
     const body = {
       model      : MODEL_VISION,
       temperature: 0.2,
       messages   : [
-        { role: 'user', content: userBlocks },
+        { role: 'system', content: systemPrompt },  // РЯДОК
+        { role: 'user',   content: userBlocks },     // МАСИВ
       ],
     };
 
-    // Детальний лог що відправляємо
     console.log('[teacher] model:', MODEL_VISION);
-    console.log('[teacher] blocks:', userBlocks.map(b => b.type));
-    console.log('[teacher] body size:', JSON.stringify(body).length, 'bytes');
+    console.log('[teacher] images:', userBlocks.filter(b => b.type === 'image_url').length);
 
     const response = await fetch(API_URL, {
       method : 'POST',
